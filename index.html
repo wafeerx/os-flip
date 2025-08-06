@@ -1,685 +1,360 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Bird</title>
-    <!-- Tailwind CSS CDN untuk styling dasar -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tone.js CDN untuk efek suara -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1a202c; /* Warna latar belakang gelap */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow: hidden; /* Sembunyikan scrollbar */
-        }
-        canvas {
-            border: 2px solid #4a5568; /* Border abu-abu */
-            border-radius: 1rem; /* Sudut membulat */
-            display: block;
-            touch-action: none; /* Mencegah default touch actions seperti scrolling */
-        }
-        .game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            background-color: #2d3748; /* Latar belakang kontainer */
-            border-radius: 1.5rem; /* Sudut membulat lebih besar */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .button-style {
-            padding: 0.75rem 1.5rem;
-            border-radius: 9999px; /* Bentuk pil */
-            font-weight: bold;
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .button-style:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .btn-green {
-            background-color: #48bb78; /* Hijau Tailwind */
-            color: white;
-        }
-        .btn-green:hover {
-            background-color: #38a169;
-        }
-        .btn-red {
-            background-color: #ef4444; /* Merah Tailwind */
-            color: white;
-        }
-        .btn-red:hover {
-            background-color: #dc2626;
-        }
-        .high-score-display { /* Gaya untuk skor tertinggi (HTML) */
-            font-size: 1.2rem;
-            font-weight: bold; /* Ditambahkan agar lebih menonjol */
-            color: #e2e8f0; /* Warna teks terang */
-            margin-bottom: 0.5rem;
-        }
-
-        /* Gaya untuk pop-up Game Over */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7); /* Overlay gelap */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000; /* Pastikan di atas elemen lain */
-        }
-        .modal-content {
-            background-color: #2d3748; /* Latar belakang pop-up */
-            padding: 2rem;
-            border-radius: 1.5rem;
-            text-align: center;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-            color: #e2e8f0;
-            max-width: 80%;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .modal-title {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #fca5a5;
-        }
-        .modal-score {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #a7f3d0; /* Warna hijau muda */
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Bird</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #1a202c; display: flex; justify-content: center; align-items: center; height:100vh; margin:0; overflow:hidden; }
+    canvas { border:2px solid #4a5568; border-radius:1rem; display:block; touch-action:none; }
+    .game-container{ display:flex; flex-direction:column; align-items:center; gap:1rem; padding:1rem; background:#2d3748; border-radius:1.5rem; box-shadow:0 10px 15px rgba(0,0,0,0.1); }
+    .button-style{ padding:.75rem 1.5rem; border-radius:9999px; font-weight:bold; transition:.2s; cursor:pointer; }
+    .btn-green{background:#48bb78;color:#fff;} .btn-green:hover{background:#38a169;}
+    .high-score-display{font-size:1.2rem;font-weight:bold;color:#e2e8f0;}
+    .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;justify-content:center;align-items:center;z-index:1000;}
+    .modal-content{background:#2d3748;padding:2rem;border-radius:1.5rem;text-align:center;color:#e2e8f0;display:flex;flex-direction:column;gap:1rem;}
+    .modal-title{font-size:2.5rem;color:#fca5a5;}
+    .modal-score{font-size:1.8rem;color:#a7f3d0;}
+    .hidden{display:none;}
+  </style>
 </head>
 <body>
-    <div class="game-container">
-        <div id="highScoreDisplay" class="high-score-display">Skor Tertinggi: 0</div>
-        <canvas id="gameCanvas"></canvas>
-        <button id="startButton" class="button-style btn-green">Mulai Game</button>
+  <div class="game-container">
+    <div id="highScoreDisplay" class="high-score-display">Skor Tertinggi: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <button id="startButton" class="button-style btn-green">Mulai Game</button>
+  </div>
+
+  <div id="gameOverModal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div id="modalTitle" class="modal-title">Game Over!</div>
+      <div id="modalScore" class="modal-score">Skor Akhir: 0</div>
+      <button id="restartButton" class="button-style btn-green">Mulai Ulang</button>
     </div>
+  </div>
 
-    <!-- Pop-up Game Over -->
-    <div id="gameOverModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div id="modalTitle" class="modal-title">Game Over!</div>
-            <div id="modalScore" class="modal-score">Skor Akhir: 0</div>
-            <button id="restartButton" class="button-style btn-green">Mulai Ulang</button>
-        </div>
-    </div>
+  <script>
+  // --- Setup & Vars ---
+  const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+  const highScoreDisplay = document.getElementById('highScoreDisplay');
+  const startButton = document.getElementById('startButton');
+  const restartButton = document.getElementById('restartButton');
+  const gameOverModal = document.getElementById('gameOverModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalScore = document.getElementById('modalScore');
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const highScoreDisplay = document.getElementById('highScoreDisplay');
-        const startButton = document.getElementById('startButton');
-        const restartButton = document.getElementById('restartButton');
-        const gameOverModal = document.getElementById('gameOverModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalScore = document.getElementById('modalScore');
+  const CANVAS_WIDTH = 320, CANVAS_HEIGHT = 568, GROUND_HEIGHT = 50;
+  canvas.width = CANVAS_WIDTH; canvas.height = CANVAS_HEIGHT;
 
-        // Ukuran kanvas
-        const CANVAS_WIDTH = 320;
-        const CANVAS_HEIGHT = 568; // Rasio aspek ponsel umum
+  let bird, pipes, clouds, ground;
+  let score = 0, highScore = localStorage.getItem('flappyBirdHighScore')||0;
+  let gameStarted=false, gameOver=false, frame=0;
+  const PIPE_WIDTH=50, PIPE_GAP=150, PIPE_SPAWN_INTERVAL=280;
+  let currentPipeSpeed = 1.2;
+  const BIRD_FLAP_STRENGTH=-1.2, GRAVITY=0.01;
+  const DIFFICULTY_INCREASE_SCORE=10, SPEED_INCREASE_AMOUNT=0.05;
 
-        canvas.width = CANVAS_WIDTH;
-        canvas.height = CANVAS_HEIGHT;
+  // --- Assets & Audio ---
+  const backgroundImage=new Image(), birdImage=new Image(), coinImage=new Image();
+  let isBackgroundLoaded=false, isBirdImageLoaded=false, isCoinImageLoaded=false;
+  const getImageUrl=(f)=>typeof _FILE_ACCESS_URL_!=='undefined'&&_FILE_ACCESS_URL_[f]?_FILE_ACCESS_URL_[f]:f;
 
-        // Variabel Game
-        let bird;
-        let pipes = [];
-        let clouds = [];
-        let ground;
-        let score = 0;
-        let highScore = localStorage.getItem('flappyBirdHighScore') || 0;
-        let gameStarted = false;
-        let gameOver = false;
-        let frame = 0;
+  backgroundImage.src = getImageUrl('bg.jpg');
+  backgroundImage.onload = ()=>isBackgroundLoaded=true;
+  birdImage.src = getImageUrl('bird.png');
+  birdImage.onload = ()=>isBirdImageLoaded=true;
+  coinImage.src = getImageUrl('coin.png');
+  coinImage.onload = ()=>isCoinImageLoaded=true;
 
-        // --- Image Loading ---
-        const backgroundImage = new Image();
-        let isBackgroundLoaded = false;
-        const birdImage = new Image(); // Gunakan birdImage untuk bird.png
-        let isBirdImageLoaded = false;
-        const coinImage = new Image(); // Gunakan coinImage untuk coin.png
-        let isCoinImageLoaded = false;
+  let flapSynth, hitSynth, coinSynth;
+  async function setupAudio(){
+    if (Tone.context.state!=='running') try{await Tone.start()}catch{}
+    flapSynth = flapSynth||new Tone.MembraneSynth().toDestination();
+    hitSynth  = hitSynth||new Tone.NoiseSynth({noise:{type:"white"},envelope:{attack:0.001,decay:0.1,sustain:0,release:0.05}}).toDestination();
+    coinSynth = coinSynth||new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:0.005,decay:0.1,sustain:0,release:0.1}}).toDestination();
+  }
 
-        // Fallback URL atau path file langsung
-        const getImageUrl = (filename) => {
-            if (typeof _FILE_ACCESS_URL_ !== 'undefined' && _FILE_ACCESS_URL_[filename]) {
-                return _FILE_ACCESS_URL_[filename];
-            }
-            // Fallback ke path file langsung jika _FILE_ACCESS_URL_ tidak tersedia atau tidak mengandung file
-            return filename;
-        };
+  // --- Classes ---
+  class Cloud {
+    constructor(){
+      this.x=Math.random()*CANVAS_WIDTH;
+      this.y=Math.random()*(CANVAS_HEIGHT-GROUND_HEIGHT-150)+50;
+      this.width=Math.random()*60+30;
+      this.height=Math.random()*20+10;
+      this.speed=Math.random()*0.3+0.1;
+      this.color='rgba(255,255,255,0.7)';
+    }
+    draw(){
+      ctx.fillStyle=this.color;
+      ctx.beginPath();
+      ctx.arc(this.x,this.y,this.width/2,0,2*Math.PI);
+      ctx.arc(this.x+this.width*0.4,this.y+this.height*0.3,this.width/3,0,2*Math.PI);
+      ctx.arc(this.x-this.width*0.3,this.y+this.height*0.2,this.width/3.5,0,2*Math.PI);
+      ctx.fill();
+    }
+    update(){
+      this.x-=this.speed;
+      if(this.x+this.width<0){
+        this.x=CANVAS_WIDTH+Math.random()*100;
+        this.y=Math.random()*(CANVAS_HEIGHT-GROUND_HEIGHT-150)+50;
+      }
+    }
+  }
 
-        // Muat Background
-        backgroundImage.src = getImageUrl('bg.jpg');
-        backgroundImage.onload = () => {
-            isBackgroundLoaded = true;
-            console.log("Gambar latar belakang berhasil dimuat.");
-        };
-        backgroundImage.onerror = () => {
-            console.warn("Gagal memuat gambar latar belakang. Menggunakan warna solid sebagai fallback.");
-            isBackgroundLoaded = false;
-        };
+  class Ground {
+    constructor(){
+      this.x=0; this.y=CANVAS_HEIGHT-GROUND_HEIGHT;
+      this.width=CANVAS_WIDTH*2; this.height=GROUND_HEIGHT;
+      this.color='#8b4513';
+    }
+    draw(){
+      ctx.fillStyle=this.color;
+      ctx.fillRect(this.x,this.y,this.width,this.height);
+      ctx.fillStyle='#228B22';
+      ctx.fillRect(this.x,this.y, this.width,10);
+    }
+    update(){
+      this.x-=currentPipeSpeed;
+      if(this.x<=-CANVAS_WIDTH) this.x=0;
+    }
+  }
 
-        // Muat Gambar Burung
-        birdImage.src = getImageUrl('bird.png');
-        birdImage.onload = () => {
-            isBirdImageLoaded = true;
-            console.log("Gambar burung berhasil dimuat.");
-        };
-        birdImage.onerror = () => {
-            console.warn("Gagal memuat gambar burung. Menggunakan bentuk dasar sebagai fallback.");
-            isBirdImageLoaded = false;
-        };
+  class Coin {
+    constructor(){
+      this.radius=8; this.color='#ffd700'; this.collected=false;
+      this.width=25; this.height=30;
+      this.flipAngle=0; this.flipSpeed=-0.004;
+    }
+    update(){
+      if(!this.collected) this.flipAngle=(this.flipAngle+this.flipSpeed)%(2*Math.PI);
+    }
+    draw(x,y){
+      if(this.collected) return;
+      const scaleX=Math.cos(this.flipAngle);
+      if(isCoinImageLoaded){
+        ctx.save(); ctx.translate(x,y); ctx.scale(scaleX,1);
+        ctx.drawImage(coinImage,-this.width/2,-this.height/2,this.width,this.height);
+        ctx.restore();
+      } else {
+        ctx.fillStyle='#ccaa00';
+        ctx.beginPath(); ctx.ellipse(x+1,y+1,this.radius,this.radius*0.8,0,0,2*Math.PI); ctx.fill();
+        ctx.fillStyle=this.color;
+        ctx.beginPath(); ctx.ellipse(x,y,this.radius,this.radius*0.8,0,0,2*Math.PI); ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,0.7)';
+        ctx.beginPath(); ctx.ellipse(x-this.radius*0.4,y-this.radius*0.4,this.radius*0.3,this.radius*0.2,-Math.PI/4,0,2*Math.PI); ctx.fill();
+        ctx.fillStyle='#8B4513'; ctx.font='bold 12px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('C',x,y);
+      }
+    }
+  }
 
-        // Muat Gambar Koin
-        coinImage.src = getImageUrl('coin.png');
-        coinImage.onload = () => {
-            isCoinImageLoaded = true;
-            console.log("Gambar koin berhasil dimuat.");
-        };
-        coinImage.onerror = () => {
-            console.warn("Gagal memuat gambar koin. Menggunakan bentuk dasar sebagai fallback.");
-            isCoinImageLoaded = false;
-        };
+  class Bird {
+    constructor(){
+      this.x=50; this.y=CANVAS_HEIGHT/2; this.radius=12;
+      this.velocityY=0; this.rotation=0; this.rotationVelocity=0;
+      this.width=60; this.height=60; this.flapPower=0.3; this.rotationDamping=0.9;
+      this.speechText=''; this.speechTimer=0;
+    }
+    update(){
+      this.velocityY+=GRAVITY; this.y+=this.velocityY;
+      const tilt=Math.min(Math.PI/4,Math.max(-Math.PI/4,this.velocityY*0.05));
+      this.rotation=tilt+this.rotationVelocity;
+      this.rotationVelocity*=this.rotationDamping;
+      if(this.y-this.radius<0){ this.y=this.radius; this.velocityY=0; }
+      if(this.y+this.radius>CANVAS_HEIGHT-GROUND_HEIGHT){
+        this.y=CANVAS_HEIGHT-GROUND_HEIGHT-this.radius; this.velocityY=0;
+        if(gameStarted&&!gameOver) endGame();
+      }
+      if(this.speechTimer>0) this.speechTimer--;
+    }
+    draw(){
+      ctx.save(); ctx.translate(this.x,this.y); ctx.rotate(this.rotation);
+      if(isBirdImageLoaded){
+        ctx.drawImage(birdImage,-this.width/2,-this.height/2,this.width,this.height);
+      } else {
+        ctx.fillStyle='#fcd34d'; ctx.beginPath();
+        ctx.ellipse(0,0,this.radius*1.5,this.radius,0,0,2*Math.PI); ctx.fill();
+        ctx.fillStyle='black'; ctx.beginPath();
+        ctx.arc(this.radius*0.8,-this.radius*0.4,this.radius*0.3,0,2*Math.PI); ctx.fill();
+        ctx.fillStyle='white'; ctx.beginPath();
+        ctx.arc(this.radius*0.85,-this.radius*0.45,this.radius*0.1,0,2*Math.PI); ctx.fill();
+        ctx.fillStyle='#ff8c00'; ctx.beginPath();
+        ctx.moveTo(this.radius*1.5,0); ctx.lineTo(this.radius*2,-this.radius*0.3);
+        ctx.lineTo(this.radius*2,this.radius*0.3); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    }
+    flap(){
+      this.velocityY=BIRD_FLAP_STRENGTH; this.rotationVelocity=-this.flapPower;
+      if(flapSynth) flapSynth.triggerAttackRelease("C4","8n");
+    }
+  }
 
-        // --- Konfigurasi Game ---
-        const PIPE_WIDTH = 50;
-        const PIPE_GAP = 150;
-        const PIPE_SPAWN_INTERVAL = 280;
-        let currentPipeSpeed = 1.2;
-        const BIRD_FLAP_STRENGTH = -1.2; // Kekuatan lompatan burung
-        const GRAVITY = 0.01; // Gaya gravitasi
-        const GROUND_HEIGHT = 50;
-        const DIFFICULTY_INCREASE_SCORE = 10;
-        const SPEED_INCREASE_AMOUNT = 0.05;
+  class Pipe {
+    constructor(){
+      this.x=CANVAS_WIDTH; this.width=PIPE_WIDTH; this.gap=PIPE_GAP;
+      this.gapY=Math.random()*(CANVAS_HEIGHT-this.gap-GROUND_HEIGHT-100)+50;
+      this.coin=new Coin(); this.coinCollected=false;
+    }
+    draw(){
+      ctx.fillStyle='#10b981';
+      ctx.fillRect(this.x,0,this.width,this.gapY-this.gap/2);
+      ctx.fillRect(this.x,this.gapY+this.gap/2,this.width,CANVAS_HEIGHT-(this.gapY+this.gap/2)-GROUND_HEIGHT);
+      ctx.fillStyle='#059669';
+      ctx.fillRect(this.x-5,this.gapY-this.gap/2-20,this.width+10,20);
+      ctx.fillRect(this.x-5,this.gapY+this.gap/2,this.width+10,20);
+      if(!this.coinCollected) this.coin.draw(this.x+this.width/2,this.gapY);
+    }
+    update(){
+      this.x-=currentPipeSpeed;
+      this.coin.update();
+    }
+  }
 
-        // --- Inisialisasi Efek Suara ---
-        let flapSynth, hitSynth, coinSynth;
+  // --- Init & Draw ---
+  function initGame(){
+    bird=new Bird();
+    pipes=[]; clouds=[]; for(let i=0;i<5;i++) clouds.push(new Cloud());
+    ground=new Ground();
+    score=0; currentPipeSpeed=1.2; gameStarted=false; gameOver=false; frame=0;
+    highScoreDisplay.textContent=`Skor Tertinggi: ${highScore}`;
+    startButton.classList.remove('hidden');
+    restartButton.classList.add('hidden');
+    gameOverModal.classList.add('hidden');
+    draw();
+  }
 
-        async function setupAudio() {
-            // Pastikan Tone.js siap
-            if (Tone.context.state !== 'running') {
-                try {
-                    await Tone.start();
-                } catch (error) {
-                    console.error("Gagal memulai konteks audio:", error);
-                    return; // Jangan lanjutkan jika audio gagal
-                }
-            }
-            // Inisialisasi synth hanya jika belum ada
-            if (!flapSynth) flapSynth = new Tone.MembraneSynth().toDestination();
-            if (!hitSynth) hitSynth = new Tone.NoiseSynth({
-                noise: { type: "white" },
-                envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.05 }
-            }).toDestination();
-            if (!coinSynth) coinSynth = new Tone.Synth({
-                oscillator: { type: "sine" },
-                envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 }
-            }).toDestination();
+  function draw(){
+    ctx.clearRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+    // background
+    if(isBackgroundLoaded){
+      ctx.globalAlpha=0.5;
+      ctx.drawImage(backgroundImage,0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+      ctx.globalAlpha=1;
+    } else {
+      ctx.fillStyle='#7dd3fc';
+      ctx.fillRect(0,0,CANVAS_WIDTH,CANVAS_HEIGHT);
+    }
+    clouds.forEach(c=>c.draw());
+    pipes.forEach(p=>p.draw());
+    bird.draw();
+    ground.draw();
+    // score
+    if(gameStarted&&!gameOver){
+      ctx.fillStyle='white'; ctx.font='bold 24px Inter'; ctx.textAlign='center';
+      ctx.fillText(`${score}`,CANVAS_WIDTH/2,CANVAS_HEIGHT/2-100);
+    }
+    // speech bubble
+    if(bird.speechTimer>0){
+      ctx.fillStyle='white'; ctx.font='14px Inter'; ctx.textAlign='center';
+      ctx.fillText(bird.speechText, bird.x + 1, bird.y - bird.radius * 3);
+    }
+  }
+
+  // --- Update & Collisions ---
+  function update(){
+    if(!gameStarted||gameOver){
+      clouds.forEach(c=>c.update());
+      ground.update();
+      draw();
+      requestAnimationFrame(update);
+      return;
+    }
+    frame++;
+    bird.update();
+    clouds.forEach(c=>c.update());
+    ground.update();
+    if(frame%PIPE_SPAWN_INTERVAL===0) pipes.push(new Pipe());
+    pipes=pipes.filter(pipe=>{ pipe.update(); return pipe.x+pipe.width>0; });
+    checkCollisionsAndScore();
+    if(score>0&&score%DIFFICULTY_INCREASE_SCORE===0&&frame%PIPE_SPAWN_INTERVAL===0)
+      currentPipeSpeed+=SPEED_INCREASE_AMOUNT;
+    draw();
+    requestAnimationFrame(update);
+  }
+
+  function checkCollisionsAndScore(){
+    pipes.forEach(pipe=>{
+      // pipe collision
+      if(bird.x+bird.radius>pipe.x&&bird.x-bird.radius<pipe.x+pipe.width){
+        if(bird.y-bird.radius<pipe.gapY-pipe.gap/2||
+           bird.y+bird.radius>pipe.gapY+pipe.gap/2){
+          endGame(); return;
         }
+      }
+      // coin collect & speech
+      if(!pipe.coinCollected&&bird.x>pipe.x+pipe.width/2){
+        pipe.coinCollected=true;
+        score++;
+        if(coinSynth) coinSynth.triggerAttackRelease("C6","32n");
+        bird.speechText='Hana, love u 😙';
+        bird.speechTimer=60;
+      }
+    });
+    if(bird.y-bird.radius<0) endGame();
+  }
 
-        // --- Objek Game ---
+  // --- Game Over ---
+  function endGame(){
+    gameOver=true;
+    if(hitSynth) hitSynth.triggerAttackRelease("8n");
+    if(score>highScore){
+      highScore=score;
+      localStorage.setItem('flappyBirdHighScore',highScore);
+      highScoreDisplay.textContent=`Skor Tertinggi: ${highScore}`;
+      modalTitle.textContent='Skor Tertinggi Baru!';
+    } else modalTitle.textContent='Game Over!';
+    modalScore.textContent=`Skor Akhir: ${score}`;
+    gameOverModal.classList.remove('hidden');
+    startButton.classList.add('hidden');
+    restartButton.classList.remove('hidden');
+  }
 
-        // Objek Awan
-        class Cloud {
-            constructor() {
-                this.x = Math.random() * CANVAS_WIDTH;
-                this.y = Math.random() * (CANVAS_HEIGHT - GROUND_HEIGHT - 150) + 50;
-                this.width = Math.random() * 60 + 30;
-                this.height = Math.random() * 20 + 10;
-                this.speed = Math.random() * 0.3 + 0.1;
-                this.color = 'rgba(255, 255, 255, 0.7)';
-            }
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.width / 2, 0, Math.PI * 2);
-                ctx.arc(this.x + this.width * 0.4, this.y + this.height * 0.3, this.width / 3, 0, Math.PI * 2);
-                ctx.arc(this.x - this.width * 0.3, this.y + this.height * 0.2, this.width / 3.5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            update() {
-                this.x -= this.speed;
-                if (this.x + this.width < 0) {
-                    this.x = CANVAS_WIDTH + Math.random() * 100;
-                    this.y = Math.random() * (CANVAS_HEIGHT - GROUND_HEIGHT - 150) + 50;
-                    this.width = Math.random() * 60 + 30;
-                    this.height = Math.random() * 20 + 10;
-                    this.speed = Math.random() * 0.3 + 0.1;
-                }
-            }
-        }
+  // --- Controls ---
+  function startGame(){
+    setupAudio();
+    initGame();
+    gameStarted=true;
+    startButton.classList.add('hidden');
+    gameOverModal.classList.add('hidden');
+  }
+  function restartGame(){
+    initGame();
+    gameStarted=true;
+    restartButton.classList.add('hidden');
+    gameOverModal.classList.add('hidden');
+  }
 
-        // Objek Tanah
-        class Ground {
-            constructor() {
-                this.x = 0;
-                this.y = CANVAS_HEIGHT - GROUND_HEIGHT;
-                this.width = CANVAS_WIDTH * 2;
-                this.height = GROUND_HEIGHT;
-                this.color = '#8b4513'; // Warna tanah coklat
-            }
-            draw() {
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.fillStyle = '#228B22'; // Warna rumput hijau
-                ctx.fillRect(this.x, this.y, this.width, 10); // Lapisan rumput
-            }
-            update() {
-                this.x -= currentPipeSpeed;
-                if (this.x <= -CANVAS_WIDTH) {
-                    this.x = 0; // Reset posisi tanah
-                }
-            }
-        }
+  startButton.addEventListener('click',startGame);
+  restartButton.addEventListener('click',restartGame);
+  canvas.addEventListener('touchstart',e=>{
+    if(!gameStarted) startGame();
+    else if(gameStarted&&!gameOver) bird.flap();
+    e.preventDefault();
+  });
+  canvas.addEventListener('mousedown',()=>{
+    if(!gameStarted) startGame();
+    else if(gameStarted&&!gameOver) bird.flap();
+  });
 
-        // Objek Koin
-        class Coin {
-            constructor() {
-                this.radius = 8;
-                this.color = '#ffd700'; // Warna emas dasar
-                this.collected = false; // Status koin
-                this.width = 25; // Ukuran gambar koin
-                this.height = 30;
-                this.flipAngle = 0;
-                this.flipSpeed = -0.004; // Diubah menjadi negatif untuk rotasi ke kanan
-            }
-            update() {
-                if (!this.collected) {
-                    this.flipAngle = (this.flipAngle + this.flipSpeed) % (Math.PI * 2);
-                }
-            }
+  // --- Resize & Launch ---
+  function resizeCanvas(){
+    const c=document.querySelector('.game-container');
+    let nw=c.offsetWidth, nh=c.offsetHeight;
+    const ar=CANVAS_WIDTH/CANVAS_HEIGHT;
+    let h=nw/ar; if(h>nh){ h=nh; nw=nh*ar; }
+    canvas.style.width=`${nw}px`;
+    canvas.style.height=`${h}px`;
+  }
+  window.addEventListener('resize',resizeCanvas);
 
-            draw(x, y) {
-                if (this.collected) return; // Jangan gambar jika sudah dikumpulkan
-                const scaleX = Math.cos(this.flipAngle);
-                
-                if (isCoinImageLoaded) {
-                    ctx.save();
-                    ctx.translate(x, y);
-                    ctx.scale(scaleX, 1);
-                    ctx.drawImage(coinImage, -this.width / 2, -this.height / 2, this.width, this.height);
-                    ctx.restore();
-                } else {
-                    // Fallback Gambar Koin
-                    // Gambar sisi belakang koin (bayangan)
-                    ctx.fillStyle = '#ccaa00'; // Warna emas lebih gelap
-                    ctx.beginPath();
-                    ctx.ellipse(x + 1, y + 1, this.radius, this.radius * 0.8, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Gambar koin utama
-                    ctx.fillStyle = this.color; // Warna emas
-                    ctx.beginPath();
-                    ctx.ellipse(x, y, this.radius, this.radius * 0.8, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Detail kilau di tengah
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                    ctx.beginPath();
-                    ctx.ellipse(x - this.radius * 0.4, y - this.radius * 0.4, this.radius * 0.3, this.radius * 0.2, -Math.PI / 4, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Simbol "C" di tengah
-                    ctx.fillStyle = '#8B4513';
-                    ctx.font = 'bold 12px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('C', x, y);
-                }
-            }
-        }
-
-        // Objek Burung
-        class Bird {
-            constructor() {
-                this.x = 50;
-                this.y = CANVAS_HEIGHT / 2;
-                this.radius = 12;
-                this.velocityY = 0;
-                this.rotation = 0; // Rotasi utama (tilt berdasarkan kecepatan)
-                this.rotationVelocity = 0; // Rotasi tambahan untuk efek berkedip
-                this.width = 60;
-                this.height = 60;
-                this.flapPower = 0.3; // Kuat rotasi saat berkedip
-                this.rotationDamping = 0.9; // Peluruh rotasi (0-1)
-            }
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation); // Rotasi utama + efek berkedip
-
-                if (isBirdImageLoaded) {
-                    ctx.drawImage(birdImage, -this.width / 2, -this.height / 2, this.width, this.height);
-                } else {
-                    // Fallback gambar burung jika sprite gagal dimuat
-                    ctx.fillStyle = '#fcd34d'; // Warna kuning
-                    ctx.beginPath();
-                    ctx.ellipse(0, 0, this.radius * 1.5, this.radius, 0, 0, Math.PI * 2); // Bentuk oval
-                    ctx.fill();
-
-                    // Mata
-                    ctx.fillStyle = 'black';
-                    ctx.beginPath();
-                    ctx.arc(this.radius * 0.8, -this.radius * 0.4, this.radius * 0.3, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = 'white';
-                    ctx.beginPath();
-                    ctx.arc(this.radius * 0.85, -this.radius * 0.45, this.radius * 0.1, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Paruh
-                    ctx.fillStyle = '#ff8c00'; // Oranye
-                    ctx.beginPath();
-                    ctx.moveTo(this.radius * 1.5, 0);
-                    ctx.lineTo(this.radius * 2, -this.radius * 0.3);
-                    ctx.lineTo(this.radius * 2, this.radius * 0.3);
-                    ctx.closePath();
-                    ctx.fill();
-                }
-
-                ctx.restore();
-            }
-            update() {
-                this.velocityY += GRAVITY;
-                this.y += this.velocityY;
-
-                // Rotasi utama (tilt berdasarkan kecepatan vertikal)
-                const tilt = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, this.velocityY * 0.05));
-                // Rotasi tambahan (efek berkedip)
-                this.rotation = tilt + this.rotationVelocity;
-                this.rotationVelocity *= this.rotationDamping; // Peluruh rotasi
-
-                // Batasi burung agar tidak keluar dari batas atas kanvas
-                if (this.y - this.radius < 0) {
-                    this.y = this.radius;
-                    this.velocityY = 0;
-                }
-                // Deteksi tabrakan dengan tanah
-                if (this.y + this.radius > CANVAS_HEIGHT - GROUND_HEIGHT) {
-                    this.y = CANVAS_HEIGHT - GROUND_HEIGHT - this.radius;
-                    this.velocityY = 0;
-                    if (gameStarted && !gameOver) {
-                        endGame();
-                    }
-                }
-            }
-            flap() {
-                this.velocityY = BIRD_FLAP_STRENGTH;
-                // Tambahkan impuls rotasi saat berkedip
-                this.rotationVelocity = -this.flapPower; 
-                if (flapSynth) {
-                    flapSynth.triggerAttackRelease("C4", "8n");
-                }
-            }
-        }
-
-        // Objek Pipa
-        class Pipe {
-            constructor() {
-                this.x = CANVAS_WIDTH;
-                this.width = PIPE_WIDTH;
-                this.gap = PIPE_GAP;
-                this.gapY = Math.random() * (CANVAS_HEIGHT - this.gap - GROUND_HEIGHT - 100) + 50;
-                this.scored = false;
-                this.coin = new Coin(); // Setiap pipa memiliki koinnya sendiri
-                this.coinCollected = false;
-            }
-            draw() {
-                ctx.fillStyle = '#10b981'; // Hijau
-                // Pipa Atas
-                ctx.fillRect(this.x, 0, this.width, this.gapY - this.gap / 2);
-                // Pipa Bawah
-                ctx.fillRect(this.x, this.gapY + this.gap / 2, this.width, CANVAS_HEIGHT - (this.gapY + this.gap / 2) - GROUND_HEIGHT);
-
-                // Detail tambahan di bagian atas pipa
-                ctx.fillStyle = '#059669'; // Hijau lebih gelap
-                ctx.fillRect(this.x - 5, this.gapY - this.gap / 2 - 20, this.width + 10, 20); // Atas pipa atas
-                ctx.fillRect(this.x - 5, this.gapY + this.gap / 2, this.width + 10, 20); // Bagian bawah pipa bawah
-
-                // Gambar koin jika belum dikumpulkan
-                if (!this.coinCollected) {
-                    this.coin.draw(this.x + this.width / 2, this.gapY);
-                }
-            }
-            update() {
-                this.x -= currentPipeSpeed;
-                this.coin.update(); // Panggil update koin setiap frame
-            }
-        }
-
-        // --- Fungsi Utama Game ---
-
-        // Inisialisasi Game
-        function initGame() {
-            bird = new Bird();
-            pipes = [];
-            clouds = [];
-            for (let i = 0; i < 5; i++) {
-                clouds.push(new Cloud());
-            }
-            ground = new Ground();
-            score = 0;
-            currentPipeSpeed = 1.2; // Reset kecepatan
-            gameStarted = false;
-            gameOver = false;
-            frame = 0;
-            highScoreDisplay.textContent = `Skor Tertinggi: ${highScore}`;
-            startButton.classList.remove('hidden');
-            restartButton.classList.add('hidden'); // Sembunyikan tombol mulai ulang
-            gameOverModal.classList.add('hidden');
-            draw(); // Gambar tampilan awal
-        }
-
-        // Fungsi Gambar
-        function draw() {
-            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-            const originalAlpha = ctx.globalAlpha;
-
-            // Gambar latar belakang
-            if (isBackgroundLoaded) {
-                const backgroundTransparency = 0.5;
-                ctx.globalAlpha = backgroundTransparency;
-                ctx.drawImage(backgroundImage, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-                ctx.globalAlpha = originalAlpha;
-            } else {
-                // Fallback warna solid jika background tidak termuat
-                ctx.fillStyle = canvas.style.backgroundColor || '#7dd3fc';
-                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-            }
-
-            // Gambar elemen game lainnya
-            clouds.forEach(cloud => cloud.draw());
-            pipes.forEach(pipe => pipe.draw());
-            bird.draw();
-            ground.draw();
-
-            // Gambar skor di tengah layar (saat game berlangsung)
-            if (gameStarted && !gameOver) {
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 24px Inter';
-                ctx.textAlign = 'center';
-                ctx.fillText(`${score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 100);
-            }
-        }
-
-        // Fungsi Pembaruan Game
-        function update() {
-            if (!gameStarted || gameOver) {
-                // Jika game belum mulai atau sudah game over, cukup perbarui elemen latar belakang
-                clouds.forEach(cloud => cloud.update());
-                ground.update();
-                draw();
-                requestAnimationFrame(update); // Tetap panggil requestAnimationFrame
-                return;
-            }
-
-            frame++;
-            bird.update();
-            clouds.forEach(cloud => cloud.update());
-            ground.update();
-
-            // Spawn pipa baru
-            if (frame % PIPE_SPAWN_INTERVAL === 0) {
-                pipes.push(new Pipe());
-            }
-
-            // Hapus pipa yang sudah keluar layar dan perbarui pipa
-            pipes = pipes.filter(pipe => {
-                pipe.update();
-                return pipe.x + pipe.width > 0; // Pertahankan pipa yang masih terlihat
-            });
-
-            checkCollisionsAndScore();
-
-            // Tingkatkan kesulitan
-            if (score > 0 && score % DIFFICULTY_INCREASE_SCORE === 0 && frame % PIPE_SPAWN_INTERVAL === 0) {
-                currentPipeSpeed += SPEED_INCREASE_AMOUNT;
-            }
-
-            draw(); // Gambar frame saat ini
-            requestAnimationFrame(update); // Minta frame berikutnya
-        }
-
-        // Deteksi Tabrakan dan Perhitungan Skor
-        function checkCollisionsAndScore() {
-            pipes.forEach(pipe => {
-                // Tabrakan dengan pipa
-                if (bird.x + bird.radius > pipe.x && bird.x - bird.radius < pipe.x + pipe.width) {
-                    if (bird.y - bird.radius < pipe.gapY - pipe.gap / 2 ||
-                        bird.y + bird.radius > pipe.gapY + pipe.gap / 2) {
-                        endGame();
-                        return; // Keluar jika game over
-                    }
-                }
-                // Skor bertambah jika burung melewati pipa
-                if (pipe.x + pipe.width < bird.x - bird.radius && !pipe.scored) {
-                    score++;
-                    pipe.scored = true;
-                    pipe.coinCollected = true; // Tandai koin sudah dikumpulkan
-                    if (coinSynth) coinSynth.triggerAttackRelease("C6", "32n");
-                }
-            });
-            // Tabrakan dengan batas atas
-            if (bird.y - bird.radius < 0) {
-                endGame();
-            }
-        }
-
-        // Akhiri Game
-        function endGame() {
-            gameOver = true;
-            if (hitSynth) hitSynth.triggerAttackRelease("8n");
-
-            // Simpan High Score
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('flappyBirdHighScore', highScore);
-                highScoreDisplay.textContent = `Skor Tertinggi: ${highScore}`;
-                modalTitle.textContent = `Skor Tertinggi Baru!`;
-            } else {
-                modalTitle.textContent = `Game Over!`;
-            }
-
-            // Tampilkan modal Game Over
-            gameOverModal.classList.remove('hidden');
-            modalScore.textContent = `Skor Akhir: ${score}`;
-            startButton.classList.add('hidden'); // Sembunyikan tombol mulai
-            restartButton.classList.remove('hidden'); // Tampilkan tombol mulai ulang
-        }
-
-        // Fungsi Mulai Ulang Game
-        function restartGame() {
-            initGame(); // Inisialisasi ulang game
-            startButton.classList.remove('hidden'); // Tampilkan tombol mulai
-            restartButton.classList.add('hidden'); // Sembunyikan tombol mulai ulang
-            gameOverModal.classList.add('hidden'); // Sembunyikan modal game over
-            requestAnimationFrame(update); // Mulai loop game
-        }
-
-        // --- Event Listeners ---
-        // Listener untuk tombol Mulai Ulang
-        restartButton.addEventListener('click', restartGame);
-
-        // Fungsi untuk memulai game
-        function startGame() {
-            setupAudio(); // Siapkan audio
-            initGame(); // Inisialisasi ulang semua variabel
-            gameStarted = true;
-            startButton.classList.add('hidden');
-            gameOverModal.classList.add('hidden'); // Pastikan modal tersembunyi
-            requestAnimationFrame(update); // Mulai loop game
-        }
-
-        // Listener untuk tombol Mulai
-        startButton.addEventListener('click', startGame);
-
-        // Listener untuk input (sentuhan dan mouse)
-        canvas.addEventListener('touchstart', (e) => {
-            if (!gameStarted) {
-                startGame();
-            } else if (gameStarted && !gameOver) {
-                bird.flap();
-            }
-            e.preventDefault(); // Mencegah scroll/zoom pada perangkat sentuh
-        });
-
-        canvas.addEventListener('mousedown', () => {
-            if (!gameStarted) {
-                startGame();
-            } else if (gameStarted && !gameOver) {
-                bird.flap();
-            }
-        });
-
-        // --- Responsif Kanvas ---
-        function resizeCanvas() {
-            const container = document.querySelector('.game-container');
-            const containerWidth = container.offsetWidth;
-            const containerHeight = container.offsetHeight;
-
-            const aspectRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
-            let newWidth = containerWidth;
-            let newHeight = containerWidth / aspectRatio;
-
-            if (newHeight > containerHeight) {
-                newHeight = containerHeight;
-                newWidth = containerHeight * aspectRatio;
-            }
-
-            canvas.style.width = `${newWidth}px`;
-            canvas.style.height = `${newHeight}px`;
-        }
-
-        window.addEventListener('resize', resizeCanvas);
-
-        // Inisialisasi saat halaman dimuat
-        window.onload = () => {
-            initGame();
-            resizeCanvas();
-            requestAnimationFrame(update); // Mulai loop animasi dasar (latar belakang)
-        };
-    </script>
+  window.onload=()=>{
+    initGame();
+    resizeCanvas();
+    requestAnimationFrame(update);
+  };
+  </script>
 </body>
 </html>
