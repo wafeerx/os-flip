@@ -120,7 +120,7 @@
         <div class="modal-content">
             <div id="modalTitle" class="modal-title">Game Over!</div>
             <div id="modalScore" class="modal-score">Skor Akhir: 0</div>
-            <!-- Tombol "Mulai Ulang" telah dihapus dari sini -->
+            <button id="restartButton" class="button-style btn-green">Mulai Ulang</button>
         </div>
     </div>
 
@@ -129,6 +129,7 @@
         const ctx = canvas.getContext('2d');
         const highScoreDisplay = document.getElementById('highScoreDisplay');
         const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
         const gameOverModal = document.getElementById('gameOverModal');
         const modalTitle = document.getElementById('modalTitle');
         const modalScore = document.getElementById('modalScore');
@@ -237,7 +238,7 @@
             }).toDestination();
         }
 
-        // --- Kelas Objek Game ---
+        // --- Objek Game ---
 
         // Objek Awan
         class Cloud {
@@ -301,7 +302,7 @@
                 this.width = 25; // Ukuran gambar koin
                 this.height = 30;
                 this.rotation = 0;
-                this.rotationSpeed = -30;
+                this.rotationSpeed = -0.005; // Diubah menjadi negatif untuk rotasi ke kanan
             }
             update() {
                 if (!this.collected) {
@@ -319,6 +320,8 @@
                     ctx.drawImage(coinImage, -this.width / 2, -this.height / 2, this.width, this.height);
                     ctx.restore();
                 } else {
+                    // Fallback Gambar Koin
+                    // Gambar sisi belakang koin (bayangan)
                     ctx.fillStyle = '#ccaa00'; // Warna emas lebih gelap
                     ctx.beginPath();
                     ctx.ellipse(x + 1, y + 1, this.radius, this.radius * 0.8, 0, 0, Math.PI * 2);
@@ -353,17 +356,19 @@
                 this.y = CANVAS_HEIGHT / 2;
                 this.radius = 12;
                 this.velocityY = 0;
-                this.rotation = 0;
-                this.width = 60; // Sesuaikan jika ukuran bird.png berbeda
-                this.height = 60; // Sesuaikan jika ukuran bird.png berbeda
+                this.rotation = 0; // Rotasi utama (tilt berdasarkan kecepatan)
+                this.rotationVelocity = 0; // Rotasi tambahan untuk efek berkedip
+                this.width = 60;
+                this.height = 60;
+                this.flapPower = 0.3; // Kuat rotasi saat berkedip
+                this.rotationDamping = 0.9; // Peluruh rotasi (0-1)
             }
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
+                ctx.rotate(this.rotation); // Rotasi utama + efek berkedip
 
                 if (isBirdImageLoaded) {
-                    // Gambar menggunakan bird.png
                     ctx.drawImage(birdImage, -this.width / 2, -this.height / 2, this.width, this.height);
                 } else {
                     // Fallback gambar burung jika sprite gagal dimuat
@@ -397,8 +402,12 @@
             update() {
                 this.velocityY += GRAVITY;
                 this.y += this.velocityY;
-                // Rotasi burung berdasarkan kecepatan vertikal
-                this.rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, this.velocityY * 0.05));
+
+                // Rotasi utama (tilt berdasarkan kecepatan vertikal)
+                const tilt = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, this.velocityY * 0.05));
+                // Rotasi tambahan (efek berkedip)
+                this.rotation = tilt + this.rotationVelocity;
+                this.rotationVelocity *= this.rotationDamping; // Peluruh rotasi
 
                 // Batasi burung agar tidak keluar dari batas atas kanvas
                 if (this.y - this.radius < 0) {
@@ -416,6 +425,8 @@
             }
             flap() {
                 this.velocityY = BIRD_FLAP_STRENGTH;
+                // Tambahkan impuls rotasi saat berkedip
+                this.rotationVelocity = -this.flapPower; 
                 if (flapSynth) {
                     flapSynth.triggerAttackRelease("C4", "8n");
                 }
@@ -452,6 +463,7 @@
             }
             update() {
                 this.x -= currentPipeSpeed;
+                this.coin.update(); // Panggil update koin setiap frame
             }
         }
 
@@ -473,6 +485,7 @@
             frame = 0;
             highScoreDisplay.textContent = `Skor Tertinggi: ${highScore}`;
             startButton.classList.remove('hidden');
+            restartButton.classList.add('hidden'); // Sembunyikan tombol mulai ulang
             gameOverModal.classList.add('hidden');
             draw(); // Gambar tampilan awal
         }
@@ -592,10 +605,23 @@
             gameOverModal.classList.remove('hidden');
             modalScore.textContent = `Skor Akhir: ${score}`;
             startButton.classList.add('hidden'); // Sembunyikan tombol mulai
+            restartButton.classList.remove('hidden'); // Tampilkan tombol mulai ulang
+        }
+
+        // Fungsi Mulai Ulang Game
+        function restartGame() {
+            initGame(); // Inisialisasi ulang game
+            startButton.classList.remove('hidden'); // Tampilkan tombol mulai
+            restartButton.classList.add('hidden'); // Sembunyikan tombol mulai ulang
+            gameOverModal.classList.add('hidden'); // Sembunyikan modal game over
+            requestAnimationFrame(update); // Mulai loop game
         }
 
         // --- Event Listeners ---
-        // Fungsi untuk memulai atau memulai ulang game
+        // Listener untuk tombol Mulai Ulang
+        restartButton.addEventListener('click', restartGame);
+
+        // Fungsi untuk memulai game
         function startGame() {
             setupAudio(); // Siapkan audio
             initGame(); // Inisialisasi ulang semua variabel
