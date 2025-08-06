@@ -301,22 +301,23 @@
                 this.collected = false; // Status koin
                 this.width = 25; // Ukuran gambar koin
                 this.height = 30;
-                this.rotation = 0;
-                this.rotationSpeed = -0.005; // Diubah menjadi negatif untuk rotasi ke kanan
+                this.flipAngle = 0;
+                this.flipSpeed = -0.004; // Diubah menjadi negatif untuk rotasi ke kanan
             }
             update() {
                 if (!this.collected) {
-                    this.rotation += this.rotationSpeed;
+                    this.flipAngle = (this.flipAngle + this.flipSpeed) % (Math.PI * 2);
                 }
             }
 
             draw(x, y) {
                 if (this.collected) return; // Jangan gambar jika sudah dikumpulkan
-
+                const scaleX = Math.cos(this.flipAngle);
+                
                 if (isCoinImageLoaded) {
                     ctx.save();
                     ctx.translate(x, y);
-                    ctx.rotate(this.rotation);
+                    ctx.scale(scaleX, 1);
                     ctx.drawImage(coinImage, -this.width / 2, -this.height / 2, this.width, this.height);
                     ctx.restore();
                 } else {
